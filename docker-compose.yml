@@ -1,0 +1,151 @@
+version: '3.8'
+
+services:
+
+  # ─── BASE DE DONNÉES MYSQL ───────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: urban_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_USER: urban_user
+      MYSQL_PASSWORD: urban1234
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - urban_network
+
+  # ─── SERVICE AUTH ─────────────────────────────────────────────
+  auth-service:
+    build: ./services/auth-service
+    container_name: auth_service
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: urban_user
+      DB_PASSWORD: urban1234
+      DB_NAME: db_auth
+      JWT_SECRET: super_secret_jwt_key_2024
+      PORT: 3001
+    depends_on:
+      - mysql
+    networks:
+      - urban_network
+
+  # ─── SERVICE VÉHICULES ────────────────────────────────────────
+  vehicle-service:
+    build: ./services/vehicle-service
+    container_name: vehicle_service
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: urban_user
+      DB_PASSWORD: urban1234
+      DB_NAME: db_vehicles
+      JWT_SECRET: super_secret_jwt_key_2024
+      PORT: 3002
+    depends_on:
+      - mysql
+    networks:
+      - urban_network
+
+  # ─── SERVICE TRAFIC ───────────────────────────────────────────
+  traffic-service:
+    build: ./services/traffic-service
+    container_name: traffic_service
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: urban_user
+      DB_PASSWORD: urban1234
+      DB_NAME: db_traffic
+      JWT_SECRET: super_secret_jwt_key_2024
+      PORT: 3003
+    depends_on:
+      - mysql
+    networks:
+      - urban_network
+
+  # ─── SERVICE INCIDENTS ────────────────────────────────────────
+  incident-service:
+    build: ./services/incident-service
+    container_name: incident_service
+    restart: always
+    ports:
+      - "3004:3004"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: urban_user
+      DB_PASSWORD: urban1234
+      DB_NAME: db_incidents
+      JWT_SECRET: super_secret_jwt_key_2024
+      PORT: 3004
+    depends_on:
+      - mysql
+    networks:
+      - urban_network
+
+  # ─── SERVICE NOTIFICATIONS ────────────────────────────────────
+  notification-service:
+    build: ./services/notification-service
+    container_name: notification_service
+    restart: always
+    ports:
+      - "3005:3005"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: urban_user
+      DB_PASSWORD: urban1234
+      DB_NAME: db_notifications
+      JWT_SECRET: super_secret_jwt_key_2024
+      PORT: 3005
+    depends_on:
+      - mysql
+    networks:
+      - urban_network
+
+  # ─── API GATEWAY GRAPHQL ──────────────────────────────────────
+  gateway:
+    build: ./gateway
+    container_name: graphql_gateway
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:3001
+      VEHICLE_SERVICE_URL: http://vehicle-service:3002
+      TRAFFIC_SERVICE_URL: http://traffic-service:3003
+      INCIDENT_SERVICE_URL: http://incident-service:3004
+      NOTIFICATION_SERVICE_URL: http://notification-service:3005
+      JWT_SECRET: super_secret_jwt_key_2024
+      PORT: 4000
+    depends_on:
+      - auth-service
+      - vehicle-service
+      - traffic-service
+      - incident-service
+      - notification-service
+    networks:
+      - urban_network
+
+volumes:
+  mysql_data:
+
+networks:
+  urban_network:
+    driver: bridge
