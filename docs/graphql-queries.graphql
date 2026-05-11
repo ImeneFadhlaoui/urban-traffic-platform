@@ -1,0 +1,101 @@
+# ════════════════════════════════════════
+# REQUÊTES GRAPHQL — URBAN TRAFFIC PLATFORM
+# ════════════════════════════════════════
+
+# ── AUTH ────────────────────────────────
+
+mutation Register {
+  register(username: "admin", email: "admin@test.com", password: "123456", role: "ADMIN") {
+    message
+    user { id username email role }
+  }
+}
+
+mutation Login {
+  login(email: "admin@test.com", password: "123456") {
+    message
+    user { id username role }
+  }
+}
+
+mutation Logout {
+  logout { message }
+}
+
+query Me {
+  me { id username email role }
+}
+
+# ── VÉHICULES ───────────────────────────
+
+mutation AddVehicle {
+  addVehicle(plate: "TUN-1234", type: "CAR", brand: "Volkswagen", model: "Golf") {
+    id plate type brand model status
+  }
+}
+
+query Vehicles {
+  vehicles { id plate brand model status currentLat currentLng }
+}
+
+query VehicleHistory {
+  vehicleHistory(id: "1") {
+    total
+    positions { latitude longitude speed recordedAt }
+  }
+}
+
+mutation SimulateGPS {
+  simulatePositions(vehicleId: "1") { message }
+}
+
+# ── TRAFIC ──────────────────────────────
+
+mutation CreateZone {
+  createZone(name: "Centre Ville", centerLat: 36.8065, centerLng: 10.1815, radius: 500) {
+    id name densityLevel vehicleCount
+  }
+}
+
+query Zones {
+  zones { id name vehicleCount densityLevel }
+}
+
+query CongestedZones {
+  congestedZones { id name vehicleCount densityLevel }
+}
+
+mutation UpdateDensity {
+  updateDensity(zoneId: "1", vehicleCount: 35) {
+    message alert
+    zone { name densityLevel vehicleCount }
+  }
+}
+
+# ── INCIDENTS ───────────────────────────
+
+mutation CreateIncident {
+  createIncident(
+    title: "Accident Avenue Habib"
+    type: "ACCIDENT"
+    location: "Avenue Habib Bourguiba"
+    latitude: 36.8190
+    longitude: 10.1660
+  ) {
+    id title type status createdAt
+  }
+}
+
+query Incidents {
+  incidents { id title type status location createdAt }
+}
+
+query IncidentStats {
+  incidentStats { total signale enCours resolu }
+}
+
+mutation UpdateStatus {
+  updateIncidentStatus(id: "1", status: "EN_COURS") {
+    id title status
+  }
+}
